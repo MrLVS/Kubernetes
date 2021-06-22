@@ -1,0 +1,135 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ali
+spec:
+  selector:
+    matchLabels:
+      app: ali
+  template:
+    metadata:
+      labels:
+        app: ali
+    spec:
+      containers:
+      - name: ali
+        image: nakabonne/ali
+        # Override ENTRYPOINT in Dockerfile
+        command: ["sh", "-c"]
+        # Override CMD in Dockerfile
+        args:
+          - |
+            set -eu
+
+            sleep infinity
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    reloader.stakater.com/auto: "true"
+  name: mygoapp
+spec:
+  # You don't need to use "replicas" field when you use HPA
+  # replicas: 3
+  selector:
+    matchLabels:
+      app: mygoapp
+  template:
+    metadata:
+      labels:
+        app: mygoapp
+    spec:
+      containers:
+      - name: mygoapp
+        image: yourname/yourrepo:1.0.0
+        imagePullPolicy: Always
+        readinessProbe:
+          tcpSocket:
+            port: 4000
+        livenessProbe:
+          tcpSocket:
+            port: 4000
+        startupProbe:
+          tcpSocket:
+            port: 4000
+        # lifecycle:
+        #   preStop:
+        #     exec:
+        #       command:
+        #         - nginx -s quit
+        ports:
+          - containerPort: 4000
+        volumeMounts:
+          - mountPath: /app/app.properties
+            name: mycmvolume
+            subPath: myapp.properties
+          - mountPath: /media/mynewsecretfile
+            name: mysecretvolume
+            subPath: mysecretfile
+          # - mountPath: /mymountedpvcvolume
+          #   name: mypvcvolume
+        securityContext:
+          privileged: false
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: yes
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          limits:
+            cpu: 10m
+            memory: 15Mi
+        env:
+          # - name: HOST
+          #   value: 0.0.0.0
+          # - name: PORT
+          #   value: "4000"
+          # - name: ROUTE_PATH
+          #   value: /mylastname
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+        envFrom:
+          - configMapRef:
+              name: mygoappenvconfigmap
+          - secretRef:
+              name: myenvsecret
+      initContainers:
+        - name: aws-cli
+          image: alpine
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: node.kubernetes.io/instance-type
+                  operator: In
+                  values:
+                    - t3a.medium
+      terminationGracePeriodSeconds: 60
+      enableServiceLinks: false
+      volumes:
+        - name: mycmvolume
+          configMap:
+            name: mygoappconfigmapfiles
+        - name: mysecretvolume
+          secret:
+            secretName: mysecretfiles
+        # - name: mypvcvolume
+        #   persistentVolumeClaim:
+        #     claimName: mypvc
+      # для корректной работы необходимо создать абстракцию Secret, используя команду
+      # kubectl create secret generic dockerhub --from-file=.dockerconfigjson=$HOME/.docker/config.json --type=kubernetes.io/dockerconfigjson
+      imagePullSecrets:
+        - name: dockerhub
