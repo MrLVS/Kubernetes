@@ -1,0 +1,16 @@
+version: '3.9'
+
+services: 
+    app:
+        build: ./
+        image: mrlvs/go:v1.0.0
+        environment: 
+            HOST: 0.0.0.0
+            PORT: 80
+            ROUTE_PATH: /lukin
+            NAMESPACE: lukin
+            POD_IP: 100.106.121.92
+            POD_NAME: mypod
+        ports: 
+           - 80:80
+

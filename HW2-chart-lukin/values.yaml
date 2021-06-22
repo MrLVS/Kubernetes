@@ -1,0 +1,31 @@
+# Default values for chart-lukin.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+
+replicaCount: 2
+
+image:
+  registry: docker.io
+  repository: mrlvs/go
+  tag: 1.0.0
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: mysecret
+
+service:
+  port: 3000
+
+ingress:
+  enabled: true
+  hosts:
+    - host: ac21c6e1bacdd49b0b6f8b7633d3e937-d7b4d1ad3bb476bd.elb.eu-central-1.amazonaws.com
+      paths:
+        - path: /lukin
+          pathType: Prefix 
+
