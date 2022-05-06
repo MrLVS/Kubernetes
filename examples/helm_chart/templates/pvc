@@ -1,0 +1,24 @@
+{{- range $name, $p := .Values.pvcs }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "mariadb.fullname" (dict "name" $name "context" $) }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "mariadb.labels" $ | nindent 4 }}
+spec:
+  accessModes: {{- include "mariadb.valueRender" ( dict "value" .accessModes "context" $ ) | nindent 4 }}
+  {{- with .volumeMode }}
+  volumeMode: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .size | default "2Gi" }}
+  {{- with .storageClassName }}
+  storageClassName: {{ . }}
+  {{- end }}
+  {{- with .selector }}
+    {{- include "mariadb.valueRender" ( dict "value" . "context" $ ) | nindent 4 }}
+  {{- end }}
+{{- end }}
