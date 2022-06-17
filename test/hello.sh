@@ -1,6 +1,3 @@
 #!/usr/bin/env bash
 213123213
 sdfasdf
-asdasdasd
-fsdfasdf
-assssssssssssss
